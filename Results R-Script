@@ -1,0 +1,239 @@
+library(MASS)
+library(AER)
+library(DHARMa)
+library(plyr)
+library(tidyverse)
+library(texreg)
+library(stargazer)
+
+#Descriptive Statistics and Data Visualisation
+
+Cancer.data <- read.csv("opendata_inc9216_scotland.csv")
+
+Lung.Data <- subset(Cancer.data, CancerSite == "Trachea, bronchus and lung")
+All.Lung.Data <- select(filter(Lung.Data, Sex == "All"), c(CancerSite, Sex, Year, Inci-dencesAllAges, EASR, WASR))
+Male.Lung.Data <- select(filter(Lung.Data, Sex == "Male"), c(CancerSite, Sex, Year, In-cidencesAllAges, EASR, WASR))
+Female.Lung.Data <- select(filter(Lung.Data, Sex == "Female"), c(CancerSite, Sex, Year, IncidencesAllAges, EASR, WASR))
+
+#Get summary statistics for Table 3.1.1.
+summary(Male.Lung.Data)
+summary(Female.Lung.Data)
+IQR(Female.Lung.Data$IncidencesAllAges)
+var(Female.Lung.Data$IncidencesAllAges)
+IQR(Male.Lung.Data$IncidencesAllAges)
+var(Male.Lung.Data$IncidencesAllAges)
+
+#subset data into males and females
+Gender.data <- subset(Lung.Data, (Sex == "Male") | (Sex == "Female"))
+Gender.data$Male <- ifelse(Gender.data$Sex == "Male", 1, 0)
+Gender.data$Female <- ifelse(Gender.data$Sex == "Female", 1, 0)
+
+#Figure 3.1.1.
+
+mu <- ddply(Gender.data, "Sex", summarise, grp.mean=mean(IncidencesAllAges))
+ggplot(Gender.data, aes(x=IncidencesAllAges, color=Sex, fill=Sex)) +
+  geom_histogram(aes(y=..density..), position="identity", alpha=0.5, binwidth = 45)+
+  geom_density(alpha=0.6)+
+  geom_vline(data=mu, aes(xintercept=grp.mean, color=Sex),
+             linetype="dashed")+
+  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
+  scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
+  labs(title="Incidences of Lung Cancer in Males and Females",x="Incidences per year", y = "Density")+
+  theme_classic() +
+  theme(axis.text.x = element_text(color = "grey20", size = 12, hjust = .5, vjust = .5, face = "plain"),
+        axis.title=element_text(size=16), axis.text.y = element_text(color = "grey20", size = 14, hjust = .5, vjust = .5, face = "plain"),
+        legend.text=element_text(size=14), legend.title = element_text(size=16))
+
+#Figure 3.1.2
+
+par(mfrow=c(1,2))
+qqnorm(Male.Lung.Data$IncidencesAllAges, main = "Normal Q-Q Plot for Incidences of Lung Cancer in Males")
+qqline(Male.Lung.Data$IncidencesAllAges, col = "blue", lwd =2 )  
+qqnorm(Female.Lung.Data$IncidencesAllAges, main = "Normal Q-Q Plot for Incidences of Lung Cancer in Females")
+qqline(Female.Lung.Data$IncidencesAllAges, col = "blue", lwd =2 )
+
+#Shapiro - Wilk Test
+
+shapiro.test(Male.Lung.Data$Inc) 
+shapiro.test((Female.Lung.Data$IncidencesAllAges)) 
+
+#Figure 3.1.3
+
+Sex <- Gender.data$Sex
+Incidences <- Gender.data$IncidencesAllAges
+Year <- Gender.data$Year
+Year <- as.factor(Year)
+df <- data.frame(Sex, Incidences, Year)
+ggplot(df, aes(Year)) + 
+  aes(x=Year, y=Incidences, group=Sex, shape=Sex, colour=Sex) + geom_line() + ge-om_point(size = 2.5) +
+  scale_colour_manual(values=c("red", "blue")) +
+  theme_classic() + 
+  labs(x="Year", y="Number of Incidences of Lung Cancer") +
+  theme(legend.position=c(0.9, 0.9)) + 
+  theme(axis.text.x = element_text(color = "grey20", size = 12, hjust = .5, vjust = .5, face = "plain"),
+        axis.title=element_text(size=16), axis.text.y = element_text(color = "grey20", size = 14, hjust = .5, vjust = .5, face = "plain"),
+        legend.text=element_text(size=14), legend.title = element_text(size=16))
+
+#Mann Whitney Test Performed in Minitab
+
+#Modelling the Data
+
+male.p <- glm(IncidencesAllAges ~ Year, family = poisson, data = Male.Lung.Data)
+summary(male.p)
+female.p <- glm(IncidencesAllAges ~ Year, family = poisson, data = Female.Lung.Data)
+summary(female.p)
+
+screenreg(list(male.p, female.p), digits = 4)
+
+#Overdispersion Test
+
+dispersiontest(male.p)
+sim_male <- simulateResiduals(fittedModel = male.p, n = 1000, refit=F)
+testDispersion(sim_male)
+plot(sim_male)
+
+dispersiontest(female.p)
+sim_female <- simulateResiduals(fittedModel = female.p, n = 1000, refit=F)
+testDispersion(sim_female)
+plot(sim_female)
+
+#Quasi-Poisson Regression
+
+male.qp <- glm(IncidencesAllAges ~ Year, family = quasi-Poisson, data = Male.Lung.Data)
+summary(male.qp)
+
+female.qp <- glm(IncidencesAllAges ~ Year, family = quasi-Poisson, data = Fe-male.Lung.Data)
+summary(female.qp)
+
+screenreg(list(male.qp, female.qp), digits = 4)
+
+#Negative Binomial Regression
+
+male.nb <- glm.nb(IncidencesAllAges ~ Year, data = Male.Lung.Data)
+summary(male.nb)
+sim_male <- simulateResiduals(fittedModel = male.nb, n = 1000, refit=F)
+testDispersion(sim_male)
+
+female.nb <- glm.nb(IncidencesAllAges ~ Year, data = Female.Lung.Data)
+summary(female.nb)
+sim_female <- simulateResiduals(fittedModel = female.nb, n = 1000, refit=F)
+testDispersion(sim_female)
+
+screenreg(list(male.nb, female.nb), digits = 4)
+
+
+AIC(male.p, female.p)
+AIC(male.nb, female.nb)
+BIC(male.p, female.p)
+BIC(male.nb, female.nb)
+
+
+summary(male.p)
+edmale.p <- (171.64 - 128.22)/171.64*100; print(edmale.p)
+summary(female.p)
+edfemale.p <- (1092.73 - 73.23)/1092.73*100; print(edfemale.p)
+
+summary(male.nb)
+edmale.nb <- (33.280 - 24.933)/33.280*100; print(edmale.nb)
+summary(female.nb)
+edfemale.nb <- (369.411 - 25.271)/369.411*100; print(edfemale.nb)
+
+# Model Assumptions 
+
+EP <- resid(male.nb, type = "pearson")
+ED <- resid(male.nb, type = "deviance")
+mu <- predict(male.nb, type = "response") # predicted values
+E <- Male.Lung.Data$IncidencesAllAges - mu
+EP2 <- E / sqrt(24.933 /23 * mu) #unsure about this, appears wrong
+op <- par(mfrow = c(2, 2))
+plot(x = mu, y = E, main = "Response residuals", xlab = "Fitted Values", ylab = "Response residuals")
+plot(x = mu, y = EP, main = "Pearson residuals",  xlab = "Fitted Values", ylab = "Pearson residuals")
+plot(x = mu, y = EP2, main = "Pearson residuals scaled",  xlab = "Fitted Values", ylab = "Pearson residuals scaled")
+plot(x = mu, y = ED, main = "Deviance residuals",  xlab = "Fitted Values", ylab = "Devi-ance residuals")
+par(op)
+
+EP <- resid(female.nb, type = "pearson")
+ED <- resid(female.nb, type = "deviance")
+mu <- predict(female.nb, type = "response")
+E <- Female.Lung.Data$IncidencesAllAges - mu
+EP2 <- E / sqrt(25.271/23 * mu) #ask which makes more sense
+op <- par(mfrow = c(2, 2))
+plot(x = mu, y = E, main = "Response residuals", xlab = "Fitted Values", ylab = "Response residuals")
+plot(x = mu, y = EP, main = "Pearson residuals",  xlab = "Fitted Values", ylab = "Pearson residuals")
+plot(x = mu, y = EP2, main = "Pearson residuals scaled",  xlab = "Fitted Values", ylab = "Pearson residuals scaled")
+plot(x = mu, y = ED, main = "Deviance residuals",  xlab = "Fitted Values", ylab = "Devi-ance residuals")
+par(op)
+
+#Checking assumption plots
+
+par(mfrow=c(2,2))
+stan_res<-(residuals(male.nb)-mean(residuals(male.nb)))/sd(residuals(male.nb))
+hist(stan_res,main="Histogram of Standardised Residuals",xlab="Standardised Residu-als",ylab="Frequency")
+plot(density(stan_res),main ="Density Plot of Standardised Residu-als",ylab="Density",xlab="Standardised Residuals")
+qqnorm(stan_res) 
+abline(a=0,b=1) 
+plot(stan_res,type="b",main="Time series/Versus Order plot of Standardised Residu-als",ylab="Standardised Residuals",xlab="Order")
+
+par(mfrow=c(2,2))
+stan_res<-(residuals(female.nb)-mean(residuals(female.nb)))/sd(residuals(female.nb))
+hist(stan_res,main="Histogram of Standardised Residuals",xlab="Standardised Residu-als",ylab="Frequency")
+plot(density(stan_res),main ="Density Plot of Standardised Residu-als",ylab="Density",xlab="Standardised Residuals")
+qqnorm(stan_res) 
+abline(a=0,b=1) 
+plot(stan_res,type="b",main="Time series/Versus Order plot of Standardised Residu-als",ylab="Standardised Residuals",xlab="Order")
+
+
+#Predictions
+
+#Prediction Plot for males
+
+MyData <- data.frame(Year = seq(from = 1993, to = 2017, by = 1))
+G <- predict(male.nb, newdata = MyData, type = "link",
+             se = TRUE)
+F <- exp(G$fit)
+FSEUP <- exp(G$fit + 2.064 * G$se.fit)
+FSELOW <- exp(G$fit - 2.064 * G$se.fit)
+
+datlm = cbind(Male.Lung.Data, F, FSEUP, FSELOW)
+head(datlm)
+
+ggplot(datlm, aes(x = Year, y = IncidencesAllAges) ) +
+  geom_point() +
+  geom_ribbon( aes(ymin = FSELOW, ymax = FSEUP), alpha = .15) +
+  geom_line( aes(y = F), size = 1) + 
+  theme_classic() + 
+  scale_x_continuous(limits = c(1993,2017), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(2250,3250), expand = c(0, 0)) +
+  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
+  scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
+  labs(title="Predicted Incidences of Lung Cancer in Males",x="Year", y = "Incidences of Lung Cancer") +
+  theme(axis.text.x = element_text(color = "grey20", size = 12, hjust = .5, vjust = .5, face = "plain"),
+        axis.title=element_text(size=16), axis.text.y = element_text(color = "grey20", size = 14, hjust = .5, vjust = .5, face = "plain"))
+
+
+#Prediction Plot for Females
+
+MyData <- data.frame(Year = seq(from = 1993, to = 2017, by = 1))
+G <- predict(female.nb, newdata = MyData, type = "link",
+             se = TRUE)
+F <- exp(G$fit)
+FSEUP <- exp(G$fit + 2.064 * G$se.fit)
+FSELOW <- exp(G$fit - 2.064 * G$se.fit)
+
+datlm = cbind(Female.Lung.Data, F, FSEUP, FSELOW)
+head(datlm)
+C <- c(1, 1993)
+std.er <- sqrt((t(C) %*% vcov(male.nb) %*% C)); print(std.er)
+
+ggplot(datlm, aes(x = Year, y = IncidencesAllAges) ) +
+  geom_point() +
+  geom_ribbon( aes(ymin = FSELOW, ymax = FSEUP), alpha = .15) +
+  geom_line( aes(y = F), size = 1) + 
+  theme_classic() + 
+  scale_x_continuous(limits = c(1993,2017), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(1500,3000), expand = c(0, 0)) +
+  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
+  scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
+  labs(title="Predicted Incidences of Lung Cancer in Females",x="Year", y = "Incidences of Lung Cancer") +
+  theme(axis.text.x = element_text(color = "grey20", size = 12, hjust = .5, vjust = .5, face = "plain"),
+        axis.title=element_text(size=16), axis.text.y = element_text(color = "grey20", size = 14, hjust = .5, vjust = .5, face = "plain"))
