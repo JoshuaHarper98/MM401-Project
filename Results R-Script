@@ -11,8 +11,8 @@ library(stargazer)
 Cancer.data <- read.csv("opendata_inc9216_scotland.csv")
 
 Lung.Data <- subset(Cancer.data, CancerSite == "Trachea, bronchus and lung")
-All.Lung.Data <- select(filter(Lung.Data, Sex == "All"), c(CancerSite, Sex, Year, Inci-dencesAllAges, EASR, WASR))
-Male.Lung.Data <- select(filter(Lung.Data, Sex == "Male"), c(CancerSite, Sex, Year, In-cidencesAllAges, EASR, WASR))
+All.Lung.Data <- select(filter(Lung.Data, Sex == "All"), c(CancerSite, Sex, Year, IncidencesAllAges, EASR, WASR))
+Male.Lung.Data <- select(filter(Lung.Data, Sex == "Male"), c(CancerSite, Sex, Year, IncidencesAllAges, EASR, WASR))
 Female.Lung.Data <- select(filter(Lung.Data, Sex == "Female"), c(CancerSite, Sex, Year, IncidencesAllAges, EASR, WASR))
 
 #Get summary statistics for Table 3.1.1.
@@ -65,7 +65,7 @@ Year <- Gender.data$Year
 Year <- as.factor(Year)
 df <- data.frame(Sex, Incidences, Year)
 ggplot(df, aes(Year)) + 
-  aes(x=Year, y=Incidences, group=Sex, shape=Sex, colour=Sex) + geom_line() + ge-om_point(size = 2.5) +
+  aes(x=Year, y=Incidences, group=Sex, shape=Sex, colour=Sex) + geom_line() + geom_point(size = 2.5) +
   scale_colour_manual(values=c("red", "blue")) +
   theme_classic() + 
   labs(x="Year", y="Number of Incidences of Lung Cancer") +
@@ -99,10 +99,10 @@ plot(sim_female)
 
 #Quasi-Poisson Regression
 
-male.qp <- glm(IncidencesAllAges ~ Year, family = quasi-Poisson, data = Male.Lung.Data)
+male.qp <- glm(IncidencesAllAges ~ Year, family = quasipoisson, data = Male.Lung.Data)
 summary(male.qp)
 
-female.qp <- glm(IncidencesAllAges ~ Year, family = quasi-Poisson, data = Fe-male.Lung.Data)
+female.qp <- glm(IncidencesAllAges ~ Year, family = quasipoisson, data = Female.Lung.Data)
 summary(female.qp)
 
 screenreg(list(male.qp, female.qp), digits = 4)
@@ -142,9 +142,9 @@ edfemale.nb <- (369.411 - 25.271)/369.411*100; print(edfemale.nb)
 
 EP <- resid(male.nb, type = "pearson")
 ED <- resid(male.nb, type = "deviance")
-mu <- predict(male.nb, type = "response") # predicted values
+mu <- predict(male.nb, type = "response") 
 E <- Male.Lung.Data$IncidencesAllAges - mu
-EP2 <- E / sqrt(24.933 /23 * mu) #unsure about this, appears wrong
+EP2 <- E / sqrt(24.933 /23 * mu) 
 op <- par(mfrow = c(2, 2))
 plot(x = mu, y = E, main = "Response residuals", xlab = "Fitted Values", ylab = "Response residuals")
 plot(x = mu, y = EP, main = "Pearson residuals",  xlab = "Fitted Values", ylab = "Pearson residuals")
@@ -156,7 +156,7 @@ EP <- resid(female.nb, type = "pearson")
 ED <- resid(female.nb, type = "deviance")
 mu <- predict(female.nb, type = "response")
 E <- Female.Lung.Data$IncidencesAllAges - mu
-EP2 <- E / sqrt(25.271/23 * mu) #ask which makes more sense
+EP2 <- E / sqrt(25.271/23 * mu) 
 op <- par(mfrow = c(2, 2))
 plot(x = mu, y = E, main = "Response residuals", xlab = "Fitted Values", ylab = "Response residuals")
 plot(x = mu, y = EP, main = "Pearson residuals",  xlab = "Fitted Values", ylab = "Pearson residuals")
