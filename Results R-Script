@@ -149,7 +149,7 @@ op <- par(mfrow = c(2, 2))
 plot(x = mu, y = E, main = "Response residuals", xlab = "Fitted Values", ylab = "Response residuals")
 plot(x = mu, y = EP, main = "Pearson residuals",  xlab = "Fitted Values", ylab = "Pearson residuals")
 plot(x = mu, y = EP2, main = "Pearson residuals scaled",  xlab = "Fitted Values", ylab = "Pearson residuals scaled")
-plot(x = mu, y = ED, main = "Deviance residuals",  xlab = "Fitted Values", ylab = "Devi-ance residuals")
+plot(x = mu, y = ED, main = "Deviance residuals",  xlab = "Fitted Values", ylab = "Deviance residuals")
 par(op)
 
 EP <- resid(female.nb, type = "pearson")
@@ -161,26 +161,26 @@ op <- par(mfrow = c(2, 2))
 plot(x = mu, y = E, main = "Response residuals", xlab = "Fitted Values", ylab = "Response residuals")
 plot(x = mu, y = EP, main = "Pearson residuals",  xlab = "Fitted Values", ylab = "Pearson residuals")
 plot(x = mu, y = EP2, main = "Pearson residuals scaled",  xlab = "Fitted Values", ylab = "Pearson residuals scaled")
-plot(x = mu, y = ED, main = "Deviance residuals",  xlab = "Fitted Values", ylab = "Devi-ance residuals")
+plot(x = mu, y = ED, main = "Deviance residuals",  xlab = "Fitted Values", ylab = "Deviance residuals")
 par(op)
 
 #Checking assumption plots
 
 par(mfrow=c(2,2))
 stan_res<-(residuals(male.nb)-mean(residuals(male.nb)))/sd(residuals(male.nb))
-hist(stan_res,main="Histogram of Standardised Residuals",xlab="Standardised Residu-als",ylab="Frequency")
-plot(density(stan_res),main ="Density Plot of Standardised Residu-als",ylab="Density",xlab="Standardised Residuals")
+hist(stan_res,main="Histogram of Deviance Residuals",xlab="Deviance Residuals",ylab="Frequency")
+plot(density(stan_res),main ="Density Plot of Deviance Residuals",ylab="Density",xlab="Deviance Residuals")
 qqnorm(stan_res) 
 abline(a=0,b=1) 
-plot(stan_res,type="b",main="Time series/Versus Order plot of Standardised Residu-als",ylab="Standardised Residuals",xlab="Order")
+plot(stan_res,type="b",main="Time series/Versus Order plot of Deviance Residuals",ylab="Deviance Residuals",xlab="Order")
 
 par(mfrow=c(2,2))
 stan_res<-(residuals(female.nb)-mean(residuals(female.nb)))/sd(residuals(female.nb))
-hist(stan_res,main="Histogram of Standardised Residuals",xlab="Standardised Residu-als",ylab="Frequency")
-plot(density(stan_res),main ="Density Plot of Standardised Residu-als",ylab="Density",xlab="Standardised Residuals")
+hist(stan_res,main="Histogram of Deviance Residuals",xlab="Deviance Residuals",ylab="Frequency")
+plot(density(stan_res),main ="Density Plot of Deviance Residu-als",ylab="Density",xlab="Deviance Residuals")
 qqnorm(stan_res) 
 abline(a=0,b=1) 
-plot(stan_res,type="b",main="Time series/Versus Order plot of Standardised Residu-als",ylab="Standardised Residuals",xlab="Order")
+plot(stan_res,type="b",main="Time series/Versus Order plot of Deviance Residuals",ylab="Deviance Residuals",xlab="Order")
 
 
 #Predictions
@@ -196,6 +196,13 @@ FSELOW <- exp(G$fit - 2.064 * G$se.fit)
 
 datlm = cbind(Male.Lung.Data, F, FSEUP, FSELOW)
 head(datlm)
+
+SE <- c()
+
+for (i in 1993:2017){
+  C <- c(1,i)
+  SE <- c(SE,sqrt((t(C) %*% vcov(male.nb) %*% C)))
+} ; print(SE)
 
 ggplot(datlm, aes(x = Year, y = IncidencesAllAges) ) +
   geom_point() +
@@ -222,8 +229,13 @@ FSELOW <- exp(G$fit - 2.064 * G$se.fit)
 
 datlm = cbind(Female.Lung.Data, F, FSEUP, FSELOW)
 head(datlm)
-C <- c(1, 1993)
-std.er <- sqrt((t(C) %*% vcov(male.nb) %*% C)); print(std.er)
+
+SE <- c()
+
+for (i in 1993:2017){
+  C <- c(1,i)
+  SE <- c(SE,sqrt((t(C) %*% vcov(female.nb) %*% C)))
+} ; print(SE)
 
 ggplot(datlm, aes(x = Year, y = IncidencesAllAges) ) +
   geom_point() +
