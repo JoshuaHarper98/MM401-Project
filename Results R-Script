@@ -6,6 +6,8 @@ library(tidyverse)
 library(texreg)
 library(stargazer)
 
+set.seed(8)
+
 #Descriptive Statistics and Data Visualisation
 
 Cancer.data <- read.csv("opendata_inc9216_scotland.csv")
@@ -88,7 +90,7 @@ screenreg(list(male.p, female.p), digits = 4)
 #Overdispersion Test
 
 dispersiontest(male.p)
-sim_male <- simulateResiduals(fittedModel = male.p, n = 1000, refit=F)
+sim_male <- simulateResiduals(fittedModel = male.p, n = 1000, refit=f)
 testDispersion(sim_male)
 plot(sim_male)
 
@@ -249,3 +251,5 @@ ggplot(datlm, aes(x = Year, y = IncidencesAllAges) ) +
   labs(title="Predicted Incidences of Lung Cancer in Females",x="Year", y = "Incidences of Lung Cancer") +
   theme(axis.text.x = element_text(color = "grey20", size = 12, hjust = .5, vjust = .5, face = "plain"),
         axis.title=element_text(size=16), axis.text.y = element_text(color = "grey20", size = 14, hjust = .5, vjust = .5, face = "plain"))
+
+sessionInfo()
