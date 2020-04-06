@@ -169,20 +169,18 @@ par(op)
 #Checking assumption plots
 
 par(mfrow=c(2,2))
-stan_res<-(residuals(male.nb)-mean(residuals(male.nb)))/sd(residuals(male.nb))
-hist(stan_res,main="Histogram of Deviance Residuals",xlab="Deviance Residuals",ylab="Frequency")
-plot(density(stan_res),main ="Density Plot of Deviance Residuals",ylab="Density",xlab="Deviance Residuals")
-qqnorm(stan_res) 
+hist(residuals(male.nb),main="Histogram of Deviance Residuals",xlab="Deviance Residuals",ylab="Frequency")
+plot(density(residuals(male.nb)),main ="Density Plot of Deviance Residuals",ylab="Density",xlab="Deviance Residuals")
+qqnorm(residuals(male.nb)) 
 abline(a=0,b=1) 
-plot(stan_res,type="b",main="Time series/Versus Order plot of Deviance Residuals",ylab="Deviance Residuals",xlab="Order")
+plot(residuals(male.nb),type="b",main="Time series/Versus Order plot of Deviance Residuals",ylab="Deviance Residuals",xlab="Order")
 
 par(mfrow=c(2,2))
-stan_res<-(residuals(female.nb)-mean(residuals(female.nb)))/sd(residuals(female.nb))
-hist(stan_res,main="Histogram of Deviance Residuals",xlab="Deviance Residuals",ylab="Frequency")
-plot(density(stan_res),main ="Density Plot of Deviance Residu-als",ylab="Density",xlab="Deviance Residuals")
-qqnorm(stan_res) 
+hist(residuals(female.nb),main="Histogram of Deviance Residuals",xlab="Deviance Residuals",ylab="Frequency")
+plot(density(residuals(female.nb)),main ="Density Plot of Deviance Residu-als",ylab="Density",xlab="Deviance Residuals")
+qqnorm(residuals(female.nb)) 
 abline(a=0,b=1) 
-plot(stan_res,type="b",main="Time series/Versus Order plot of Deviance Residuals",ylab="Deviance Residuals",xlab="Order")
+plot(residuals(female.nb),type="b",main="Time series/Versus Order plot of Deviance Residuals",ylab="Deviance Residuals",xlab="Order")
 
 
 #Predictions
